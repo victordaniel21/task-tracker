@@ -1,30 +1,39 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
-	// 👇 This is how we import local packages.
-	// Replace "github.com/yourusername/task-tracker" with the module name found in your go.mod file
-	"github.com/yourusername/task-tracker/internal/validator"
+	_ "github.com/lib/pq"
+
+	// Import your handler AND data packages
+	"github.com/victordaniel21/task-tracker/internal/data"
+	"github.com/victordaniel21/task-tracker/internal/handler"
 )
 
 func main() {
 	port := ":8080"
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Calling the exported function from our internal package
-		isValid := validator.IsEmailValid("test@example.com")
+	// 1. Database Connection String (DSN)
+	// format: postgres://user:password@host:port/dbname?sslmode=disable
+	// In a real app, this comes from ENV variables, not hardcoded!
+	dsn := "postgres://postgres:secret@localhost:5433/taskdb?sslmode=disable"
 
-		// %v is a generic placeholder for values in Sprintf/Printf
-		response := fmt.Sprintf("Welcome! System Check: Validator is working = %v", isValid)
+	// 2. Connect to Database
+	db, err := data.OpenDB(dsn)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	// defer ensures the DB connection closes when main() exits (e.g. if we crash)
+	defer db.Close()
 
-		fmt.Fprint(w, response)
-	})
+	// 3. Setup Router
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /v1/health", handler.HealthCheck)
+	mux.HandleFunc("POST /v1/tasks", handler.CreateTask)
 
 	log.Printf("Starting server on %s", port)
-	if err := http.ListenAndServe(port, nil); err != nil {
+	if err := http.ListenAndServe(port, mux); err != nil {
 		log.Fatal(err)
 	}
 }
