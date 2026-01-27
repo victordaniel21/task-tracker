@@ -27,10 +27,16 @@ func main() {
 	// defer ensures the DB connection closes when main() exits (e.g. if we crash)
 	defer db.Close()
 
-	// 3. Setup Router
+	// 3. Initialize Models
+	models := data.NewModels(db)
+
+	// 4. Initialize Handlers (Injecting the Models)
+	app := handler.NewDependencies(models)
+
+	// 5. Setup Router
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/health", handler.HealthCheck)
-	mux.HandleFunc("POST /v1/tasks", handler.CreateTask)
+	mux.HandleFunc("POST /v1/tasks", app.CreateTask)
 
 	log.Printf("Starting server on %s", port)
 	if err := http.ListenAndServe(port, mux); err != nil {
