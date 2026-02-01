@@ -35,3 +35,41 @@ func (m TaskModel) Insert(task *Task) error {
 	// Scan copies the columns from the returned row into our task struct
 	return m.DB.QueryRow(query, args...).Scan(&task.ID, &task.CreatedAt, &task.Version)
 }
+
+// Get retrieves a specific task by ID.
+func (m TaskModel) Get(id int64) (*Task, error) {
+	// 1. The SQL Query
+	if id < 1 {
+		return nil, sql.ErrNoRows
+	}
+
+	query := `
+		SELECT id, created_at, title, content, status, version
+		FROM tasks
+		WHERE id = $1`
+
+	// 2. Prepare the struct to hold data
+	var task Task
+
+	// 3. Execute and Scan
+	// We pass &task.ID, &task.CreatedAt etc. as pointers so Scan can fill them.
+	err := m.DB.QueryRow(query, id).Scan(
+		&task.ID,
+		&task.CreatedAt,
+		&task.Title,
+		&task.Content,
+		&task.Status,
+		&task.Version,
+	)
+
+	// 4. Handle Errors
+	if err != nil {
+		// Specifically check if the error is "row not found"
+		if err == sql.ErrNoRows {
+			return nil, sql.ErrNoRows // We will handle this in the controller (404)
+		}
+		return nil, err // Real DB error (500)
+	}
+
+	return &task, nil
+}
