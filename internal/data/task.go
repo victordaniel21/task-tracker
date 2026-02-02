@@ -73,3 +73,49 @@ func (m TaskModel) Get(id int64) (*Task, error) {
 
 	return &task, nil
 }
+
+func (m TaskModel) GetAll() ([]*Task, error) {
+	// 1. Define the query
+	query := `
+	select id, created_at, title, content, status, version
+	from tasks
+	order by id desc`
+
+	// 2. Execute the query
+	// query returns a 'Rows' object whic acts like a cursor
+	rows, err := m.DB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	// IMPORTANT!: Close the rows when the functioin returns to free up the connection
+	defer rows.Close()
+
+	// 3. Iterate through the rows
+	tasks := []*Task{} // Initialize an empty slice
+
+	for rows.Next() {
+		var task Task
+		// Scan the values from the current row into the struct
+		err := rows.Scan(
+			&task.ID,
+			&task.CreatedAt,
+			&task.Title,
+			&task.Content,
+			&task.Status,
+			&task.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Append to the slice
+		tasks = append(tasks, &task)
+	}
+	// 4. Check for errors that occured during iteration
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}

@@ -78,3 +78,24 @@ func (d *Dependencies) GetTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(task)
 }
+
+// ListTasks handles GET /v1/tasks
+func (d *Dependencies) ListTasks(w http.ResponseWriter, r *http.Request) {
+	// 1. Call the Model
+	tasks, err := d.Models.Tasks.GetAll()
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// 2. Wrap the result in a parent JSON object (Best Practice)
+	// Returning a top-level array (e.g. [{}, {}]) is valid but less flexible.
+	// Wrapping it {"tasks": [...]} allows adding metadata (like "count": 5) later.
+	response := map[string]interface{}{
+		"tasks": tasks,
+	}
+
+	// 3. Send Response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
