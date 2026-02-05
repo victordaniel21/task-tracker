@@ -99,3 +99,84 @@ func (d *Dependencies) ListTasks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+
+// UpdateTask handles PUT /v1/tasks/{id}
+func (d *Dependencies) UpdateTask(w http.ResponseWriter, r *http.Request) {
+	// 1. Get the ID from the URL
+	idString := r.PathValue("id")
+	id, err := strconv.ParseInt(idString, 10, 64)
+	if err != nil || id < 1 {
+		http.Error(w, "Bad Request: Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	// 2. Fetch the existing task first!
+	// We need to know if it exists before we update it.
+	task, err := d.Models.Tasks.Get(id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Not Found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// 3. Decode the User's new data
+	// We define a temporary struct for the incoming JSON
+	var input struct {
+		Title   *string `json:"title"` // Pointer allows us to check if it was provided
+		Content *string `json:"content"`
+		Status  *string `json:"status"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, "Bad Request: Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	// 4. Update the fields ONLY if the user provided them (Partial Update)
+	if input.Title != nil {
+		task.Title = *input.Title
+	}
+	if input.Content != nil {
+		task.Content = *input.Content
+	}
+	if input.Status != nil {
+		task.Status = *input.Status
+	}
+
+	// 5. Save changes to Database
+	err = d.Models.Tasks.Update(task)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// 6. Return the updated task
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(task)
+}
+
+func (d *Dependencies) DeleteTask(w http.ResponseWriter, r *http.Request) {
+	idString := r.PathValue("id")
+	id, err := strconv.ParseInt(idString, 10, 64)
+	if err != nil || id < 1 {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	err = d.Models.Tasks.Delete(id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Not Found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Return 200 OK with a simple message
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message": "task deleted"}`))
+}

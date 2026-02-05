@@ -120,6 +120,38 @@ func (m TaskModel) GetAll() ([]*Task, error) {
 	return tasks, nil
 }
 
+// Update modifies the data of a specific task.
+func (m TaskModel) Update(task *Task) error {
+	// 1. The SQL Query
+	// We increment the version by 1 automatically
+	query := `
+		UPDATE tasks 
+		SET title = $1, content = $2, status = $3, version = version + 1
+		WHERE id = $4
+		RETURNING version`
+
+	// 2. Execute
+	args := []interface{}{
+		task.Title,
+		task.Content,
+		task.Status,
+		task.ID,
+	}
+
+	// 3. Scan the new version back into our struct
+	// This helps us know the update actually happened
+	err := m.DB.QueryRow(query, args...).Scan(&task.Version)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return sql.ErrNoRows // The ID didn't exist
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m TaskModel) Delete(id int64) error {
 	query := `delete from tasks where id = $1`
 

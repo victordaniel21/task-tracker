@@ -39,6 +39,8 @@ func main() {
 	mux.HandleFunc("POST /v1/tasks", app.CreateTask)
 	mux.HandleFunc("GET /v1/tasks/{id}", app.GetTask)
 	mux.HandleFunc("GET /v1/tasks", app.ListTasks)
+	mux.HandleFunc("PUT /v1/tasks/{id}", app.UpdateTask)    // Update
+	mux.HandleFunc("DELETE /v1/tasks/{id}", app.DeleteTask) // Delete
 
 	log.Printf("Starting server on %s", port)
 	if err := http.ListenAndServe(port, mux); err != nil {
