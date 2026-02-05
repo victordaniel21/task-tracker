@@ -58,25 +58,29 @@ func (d *Dependencies) GetTask(w http.ResponseWriter, r *http.Request) {
 	// 2. Convert string "1" to int64 1
 	id, err := strconv.ParseInt(idString, 10, 64)
 	if err != nil || id < 1 {
-		http.Error(w, "Bad Request: Invalid ID", http.StatusBadRequest)
+		d.badRequestResponse(w, errors.New("invalid id parameter"))
 		return
 	}
 
 	// 3. Call the Model
 	task, err := d.Models.Tasks.Get(id)
 	if err != nil {
-		// Check for the specific "No Rows" error
 		if errors.Is(err, sql.ErrNoRows) {
-			http.Error(w, "Not Found: Task does not exist", http.StatusNotFound)
+			// Use the helper!
+			d.notFoundResponse(w)
 		} else {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			// Use the helper!
+			d.serverErrorResponse(w, err)
 		}
 		return
 	}
 
-	// 4. Return JSON
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(task)
+	// 4. Use the helper for success too!
+	err = d.writeJSON(w, http.StatusOK, task)
+	if err != nil {
+		d.serverErrorResponse(w, err)
+	}
+
 }
 
 // ListTasks handles GET /v1/tasks
