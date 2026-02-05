@@ -119,3 +119,23 @@ func (m TaskModel) GetAll() ([]*Task, error) {
 
 	return tasks, nil
 }
+
+func (m TaskModel) Delete(id int64) error {
+	query := `delete from tasks where id = $1`
+
+	result, err := m.DB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	// Check if a row was actually deleted
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}
