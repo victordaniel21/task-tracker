@@ -16,6 +16,7 @@ import (
 	// Import your handler AND data packages
 	"github.com/victordaniel21/task-tracker/internal/data"
 	"github.com/victordaniel21/task-tracker/internal/handler"
+	"github.com/victordaniel21/task-tracker/internal/middleware"
 )
 
 // Define a config struct to hold all our settings
@@ -63,10 +64,10 @@ func main() {
 	mux.HandleFunc("PUT /v1/tasks/{id}", app.UpdateTask)
 	mux.HandleFunc("DELETE /v1/tasks/{id}", app.DeleteTask)
 
-	// 4. Create a custom http.Server struct
+	// 4. Start the server
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      mux,
+		Handler:      middleware.EnableCORS(mux),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
