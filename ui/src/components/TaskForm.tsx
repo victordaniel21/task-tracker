@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { PlusCircle } from 'lucide-react'
 
 interface TaskFormProps {
-  onTaskCreated: () => void // Callback to refresh the list after adding
+  onTaskCreated: () => void
 }
 
 export default function TaskForm({ onTaskCreated }: TaskFormProps) {
@@ -11,8 +12,9 @@ export default function TaskForm({ onTaskCreated }: TaskFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
+    if (!title.trim()) return // Prevent empty submissions
 
+    setIsSubmitting(true)
     try {
       const response = await fetch('http://localhost:4000/v1/tasks', {
         method: 'POST',
@@ -23,7 +25,7 @@ export default function TaskForm({ onTaskCreated }: TaskFormProps) {
       if (response.ok) {
         setTitle('')
         setContent('')
-        onTaskCreated() // Tell the parent to refresh the list
+        onTaskCreated()
       }
     } catch (error) {
       console.error('Failed to create task:', error)
@@ -33,41 +35,34 @@ export default function TaskForm({ onTaskCreated }: TaskFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mb-8 bg-white p-6 rounded-xl shadow-md border border-gray-100">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">Add New Task</h2>
-      
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+    <form onSubmit={handleSubmit} className="mb-10 bg-white p-1 rounded-2xl shadow-sm border border-slate-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all duration-200">
+      <div className="p-4 border-b border-slate-100">
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          className="w-full text-lg font-semibold text-slate-800 placeholder-slate-400 bg-transparent border-none focus:ring-0 focus:outline-none"
           placeholder="What needs to be done?"
           required
         />
       </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Details</label>
-        <textarea
+      <div className="p-4 flex items-center justify-between gap-4 bg-slate-50/50 rounded-b-2xl">
+        <input
+          type="text"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          rows={3}
-          placeholder="Add some details..."
+          className="w-full text-sm text-slate-600 placeholder-slate-400 bg-transparent border-none focus:ring-0 focus:outline-none"
+          placeholder="Add a quick detail or note (optional)..."
         />
+        <button
+          type="submit"
+          disabled={isSubmitting || !title.trim()}
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white px-5 py-2.5 rounded-xl font-medium transition-colors whitespace-nowrap"
+        >
+          <PlusCircle size={18} />
+          {isSubmitting ? 'Adding...' : 'Add Task'}
+        </button>
       </div>
-
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className={`w-full py-2 px-4 rounded-lg text-white font-medium transition-colors ${
-          isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-        }`}
-      >
-        {isSubmitting ? 'Saving...' : 'Create Task'}
-      </button>
     </form>
   )
 }
