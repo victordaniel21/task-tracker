@@ -71,7 +71,7 @@ function App() {
         
         <header className="mb-10 flex justify-between items-end">
           <div>
-            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Focus</h1>
+            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">re-Focus</h1>
             <p className="text-slate-500 mt-1 font-medium">Your personal task tracker.</p>
           </div>
           <div className="text-sm font-semibold text-slate-400 bg-white px-4 py-1.5 rounded-full shadow-sm border border-slate-200">
